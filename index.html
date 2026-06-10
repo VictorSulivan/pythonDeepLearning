@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classification CIFAR-10 - Projet École</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; text-align: center; background-color: #f4f7f6; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; }
+        input[type="file"] { margin: 20px 0; padding: 10px; }
+        #result { margin-top: 25px; padding: 15px; border-radius: 8px; font-size: 1.2rem; font-weight: bold; color: #2980b9; background: #e8f4f8; display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>Classification CIFAR-10</h1>
+        <p>Le traitement est effectué côté serveur via FastAPI</p>
+        
+        <input type="file" id="imageLoader" accept="image/*">
+        
+        <div id="result">Prêt</div>
+    </div>
+
+    <script>
+        document.getElementById('imageLoader').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = "block";
+            resultDiv.innerText = "⏳ API en cours de calcul...";
+
+            // 1. Préparation de l'image dans un formulaire virtuel (Multipart)
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                // 2. Envoi de la requête POST vers ton serveur FastAPI local
+                const response = await fetch('http://127.0.0.1:8000/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                // 3. Affichage du résultat renvoyé par l'API Python
+                if (data.success) {
+                    resultDiv.innerHTML = `Résultat : <span style="color: #27ae60;">${data.label.toUpperCase()}</span> <br> <small style="font-weight: normal; color: #7f8c8d;">Logit: ${data.confidence_logit}</small>`;
+                } else {
+                    resultDiv.innerText = `Erreur API : ${data.error}`;
+                }
+            } catch (error) {
+                resultDiv.innerText = "Impossible de joindre le serveur FastAPI. Vérifie qu'il est bien lancé !";
+                console.error("Erreur Fetch:", error);
+            }
+        });
+    </script>
+</body>
+</html>
